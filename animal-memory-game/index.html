@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>动物中英文记忆配对小游戏</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>动物中英文记忆配对</h1>
+      <p class="subtitle">点击卡片，配对英文单词和对应的中文动物名 🐾</p>
+    </header>
+
+    <section class="controls">
+      <div class="stat">
+        步数：<span id="moves">0</span>
+      </div>
+      <div class="stat">
+        时间：<span id="time">0</span> 秒
+      </div>
+      <button id="restart-btn">重新开始</button>
+    </section>
+
+    <main class="game-container">
+      <div id="game-board" class="game-board">
+        <!-- 卡片由 JS 生成 -->
+      </div>
+    </main>
+
+    <div id="win-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>太棒了！全部配对成功 🎉</h2>
+        <p>用时：<span id="final-time"></span> 秒</p>
+        <p>总步数：<span id="final-moves"></span> 步</p>
+        <button id="play-again-btn">再玩一次</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
