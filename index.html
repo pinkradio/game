@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Genetic Algorithm TSP – Browser Demo</title>
+  <style>
+    :root {
+      --bg: #0b1224;
+      --panel: #101a30;
+      --panel-strong: #0d1a2f;
+      --accent: #46c2b3;
+      --accent-2: #7ae0ff;
+      --muted: #7c8aaa;
+      --text: #e9eef7;
+      --danger: #f79c73;
+      --shadow: 0 18px 40px rgba(3, 11, 26, 0.55);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", "Manrope", "SF Pro Display", "Segoe UI", sans-serif;
+      background: radial-gradient(120% 140% at 15% 20%, rgba(122, 224, 255, 0.08), transparent 32%),
+        radial-gradient(120% 160% at 85% 20%, rgba(70, 194, 179, 0.08), transparent 38%),
+        linear-gradient(135deg, #0b1224 0%, #090f1d 50%, #080d17 100%);
+      color: var(--text);
+      padding: 28px;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .title {
+      font-size: clamp(24px, 3vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.5;
+    }
+
+    .badge {
+      align-self: flex-start;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(122, 224, 255, 0.18);
+      color: var(--accent-2);
+      font-size: 13px;
+      letter-spacing: 0.01em;
+      background: rgba(122, 224, 255, 0.06);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(16, 26, 48, 0.92), rgba(10, 15, 26, 0.94));
+      border: 1px solid rgba(122, 224, 255, 0.08);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .panel-title {
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(70, 194, 179, 0.08);
+      color: var(--accent);
+      font-size: 13px;
+      border: 1px solid rgba(70, 194, 179, 0.28);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .stat label {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 18px;
+      margin-top: 4px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1.45;
+      display: block;
+      border-radius: 12px;
+      background: radial-gradient(90% 120% at 15% 20%, rgba(122, 224, 255, 0.08), transparent 30%),
+        radial-gradient(80% 120% at 80% 10%, rgba(70, 194, 179, 0.07), transparent 40%),
+        #0b1224;
+      border: 1px solid rgba(122, 224, 255, 0.08);
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(8, 13, 23, 0.8);
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .range-value {
+      min-width: 56px;
+      text-align: right;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: var(--accent);
+      color: #031019;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
+      box-shadow: 0 8px 24px rgba(70, 194, 179, 0.24);
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .tour-preview {
+      font-family: "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+      font-size: 13px;
+      background: rgba(8, 13, 23, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: var(--text);
+      max-height: 120px;
+      overflow: auto;
+    }
+
+    @media (max-width: 960px) {
+      body { padding: 18px; }
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="title">Genetic Algorithm TSP – Browser Playground</div>
+      <div class="subtitle">
+        Port of <code>ga_tsp.py</code> into an interactive canvas. Tune population, crossover, mutation, and selection to watch the route converge in real-time.
+      </div>
+      <div class="badge">Deterministic when a seed is set · Works fully offline</div>
+    </header>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Best tour</div>
+          <div id="status-pill" class="pill">Paused</div>
+        </div>
+        <canvas id="board" width="900" height="620" aria-label="TSP canvas"></canvas>
+        <div class="stats">
+          <div class="stat">
+            <label>Generation</label>
+            <strong id="gen-count">0</strong>
+          </div>
+          <div class="stat">
+            <label>Best length</label>
+            <strong id="best-length">0</strong>
+          </div>
+          <div class="stat">
+            <label>Population size</label>
+            <strong id="pop-size">0</strong>
+          </div>
+          <div class="stat">
+            <label>Points</label>
+            <strong id="point-count">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Genetic algorithm controls</div>
+          <div class="pill">ga_tsp.py parameters</div>
+        </div>
+        <div class="controls">
+          <div class="group">
+            <label>Number of points
+              <input id="point-input" type="number" value="80" min="10" max="200" step="1">
+            </label>
+            <label>Population size
+              <input id="pop-input" type="number" value="300" min="20" max="1000" step="10">
+            </label>
+            <label>Seed (empty for fresh randomness)
+              <input id="seed-input" type="text" value="42" placeholder="e.g. 42">
+            </label>
+            <label>Generations per frame
+              <input id="step-input" type="number" value="3" min="1" max="50" step="1">
+            </label>
+          </div>
+
+          <div class="group">
+            <label>Crossover rate
+              <div class="range-row">
+                <input id="cross-input" type="range" min="0" max="1" step="0.02" value="0.9">
+                <div id="cross-val" class="range-value">0.90</div>
+              </div>
+            </label>
+            <label>Mutation rate
+              <div class="range-row">
+                <input id="mut-input" type="range" min="0" max="1" step="0.02" value="0.2">
+                <div id="mut-val" class="range-value">0.20</div>
+              </div>
+            </label>
+            <label>Tournament size
+              <input id="tour-input" type="number" value="5" min="2" max="20" step="1">
+            </label>
+          </div>
+
+          <div class="buttons">
+            <button id="start-btn">Start</button>
+            <button id="step-btn" class="secondary">Step ×1</button>
+            <button id="step-big-btn" class="secondary">Step ×25</button>
+            <button id="reset-btn" class="secondary">Reset &amp; shuffle</button>
+          </div>
+
+          <div class="note">
+            - Matches the Python implementation: order crossover, swap mutation, tournament selection.<br>
+            - Lines show the current best tour; points are drawn in visit order with a gradient.
+          </div>
+
+          <div>
+            <div class="panel-title" style="font-size:14px; margin-bottom:6px;">Best visit order (first 40 cities)</div>
+            <div id="tour-preview" class="tour-preview"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("board");
+    const ctx = canvas.getContext("2d");
+
+    const pointInput = document.getElementById("point-input");
+    const popInput = document.getElementById("pop-input");
+    const seedInput = document.getElementById("seed-input");
+    const stepInput = document.getElementById("step-input");
+    const crossInput = document.getElementById("cross-input");
+    const mutInput = document.getElementById("mut-input");
+    const tourInput = document.getElementById("tour-input");
+
+    const genCountEl = document.getElementById("gen-count");
+    const bestLenEl = document.getElementById("best-length");
+    const popSizeEl = document.getElementById("pop-size");
+    const pointCountEl = document.getElementById("point-count");
+    const statusPill = document.getElementById("status-pill");
+    const tourPreview = document.getElementById("tour-preview");
+    const crossVal = document.getElementById("cross-val");
+    const mutVal = document.getElementById("mut-val");
+
+    const startBtn = document.getElementById("start-btn");
+    const stepBtn = document.getElementById("step-btn");
+    const stepBigBtn = document.getElementById("step-big-btn");
+    const resetBtn = document.getElementById("reset-btn");
+
+    let points = [];
+    let dist = [];
+    let population = [];
+    let bestTour = [];
+    let bestLen = Infinity;
+    let generation = 0;
+    let running = false;
+    let rng = Math.random;
+
+    function createRng(seed) {
+      if (seed === "" || Number.isNaN(Number(seed))) {
+        return Math.random;
+      }
+      let state = Math.abs(parseInt(seed, 10)) >>> 0;
+      if (state === 0) state = 1;
+      return () => {
+        state = (1664525 * state + 1013904223) >>> 0;
+        return state / 0x100000000;
+      };
+    }
+
+    function genPoints(n, nextRand) {
+      const pts = [];
+      for (let i = 0; i < n; i += 1) {
+        pts.push({
+          id: i,
+          x: nextRand() * 1000,
+          y: nextRand() * 1000,
+        });
+      }
+      return pts;
+    }
+
+    function buildDistMatrix(list) {
+      const n = list.length;
+      const d = Array.from({ length: n }, () => Array(n).fill(0));
+      for (let i = 0; i < n; i += 1) {
+        for (let j = i + 1; j < n; j += 1) {
+          const dx = list[i].x - list[j].x;
+          const dy = list[i].y - list[j].y;
+          const distVal = Math.hypot(dx, dy);
+          d[i][j] = distVal;
+          d[j][i] = distVal;
+        }
+      }
+      return d;
+    }
+
+    function tourLength(tour, matrix) {
+      let total = 0;
+      for (let i = 0; i < tour.length; i += 1) {
+        const a = tour[i];
+        const b = tour[(i + 1) % tour.length];
+        total += matrix[a][b];
+      }
+      return total;
+    }
+
+    function shuffle(arr, nextRand) {
+      for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(nextRand() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function randomTour(n, nextRand) {
+      return shuffle([...Array(n).keys()], nextRand);
+    }
+
+    function tournamentSelection(pop, fitness, tourSize, nextRand) {
+      let bestIdx = Math.floor(nextRand() * pop.length);
+      for (let i = 1; i < tourSize; i += 1) {
+        const idx = Math.floor(nextRand() * pop.length);
+        if (fitness[idx] > fitness[bestIdx]) bestIdx = idx;
+      }
+      return pop[bestIdx];
+    }
+
+    function orderCrossover(parent1, parent2, nextRand) {
+      const len = parent1.length;
+      const child = new Array(len).fill(null);
+      let a = Math.floor(nextRand() * len);
+      let b = Math.floor(nextRand() * len);
+      if (a > b) [a, b] = [b, a];
+      for (let i = a; i < b; i += 1) child[i] = parent1[i];
+
+      let insertPos = b;
+      for (let i = b; i < len + b; i += 1) {
+        const gene = parent2[i % len];
+        if (!child.includes(gene)) {
+          if (insertPos >= len) insertPos = 0;
+          child[insertPos] = gene;
+          insertPos += 1;
+        }
+      }
+      return child;
+    }
+
+    function mutate(tour, nextRand) {
+      const i = Math.floor(nextRand() * tour.length);
+      const j = Math.floor(nextRand() * tour.length);
+      [tour[i], tour[j]] = [tour[j], tour[i]];
+    }
+
+    function readFloat(inputEl, fallback) {
+      const val = parseFloat(inputEl.value);
+      return Number.isFinite(val) ? val : fallback;
+    }
+
+    function readInt(inputEl, fallback) {
+      const val = parseInt(inputEl.value, 10);
+      return Number.isFinite(val) ? val : fallback;
+    }
+
+    function initPopulation() {
+      const nPoints = Math.min(Math.max(readInt(pointInput, 80), 5), 400);
+      const popSize = Math.min(Math.max(readInt(popInput, 300), 10), 1500);
+      rng = createRng(seedInput.value.trim());
+      points = genPoints(nPoints, rng);
+      dist = buildDistMatrix(points);
+
+      population = Array.from({ length: popSize }, () => randomTour(nPoints, rng));
+      let best = Infinity;
+      bestTour = population[0].slice();
+      for (const t of population) {
+        const length = tourLength(t, dist);
+        if (length < best) {
+          best = length;
+          bestTour = t.slice();
+        }
+      }
+      bestLen = best;
+      generation = 0;
+      updateStats();
+      draw();
+    }
+
+    function runGeneration() {
+      const crossRate = readFloat(crossInput, 0.9);
+      const mutRate = readFloat(mutInput, 0.2);
+      const tourSize = Math.max(2, readInt(tourInput, 5));
+
+      const lengths = population.map((t) => tourLength(t, dist));
+      const fitness = lengths.map((l) => 1 / l);
+
+      for (let i = 0; i < lengths.length; i += 1) {
+        if (lengths[i] < bestLen) {
+          bestLen = lengths[i];
+          bestTour = population[i].slice();
+        }
+      }
+
+      const newPop = [];
+      const newLengths = [];
+      while (newPop.length < population.length) {
+        const p1 = tournamentSelection(population, fitness, tourSize, rng);
+        const p2 = tournamentSelection(population, fitness, tourSize, rng);
+        let child = rng() < crossRate ? orderCrossover(p1, p2, rng) : p1.slice();
+        if (rng() < mutRate) mutate(child, rng);
+        newPop.push(child);
+        newLengths.push(tourLength(child, dist));
+      }
+
+      for (let i = 0; i < newLengths.length; i += 1) {
+        if (newLengths[i] < bestLen) {
+          bestLen = newLengths[i];
+          bestTour = newPop[i].slice();
+        }
+      }
+
+      population = newPop;
+      generation += 1;
+    }
+
+    function updateStats() {
+      genCountEl.textContent = generation.toLocaleString();
+      bestLenEl.textContent = bestLen.toFixed(2);
+      popSizeEl.textContent = population.length.toLocaleString();
+      pointCountEl.textContent = points.length.toString();
+
+      const previewCount = Math.min(40, bestTour.length);
+      const order = bestTour.slice(0, previewCount).join(" → ");
+      tourPreview.textContent = order;
+    }
+
+    let lastCanvasWidth = 0;
+    let lastCanvasHeight = 0;
+
+    function ensureCanvasSize() {
+      const ratio = window.devicePixelRatio || 1;
+      const containerWidth = canvas.clientWidth;
+      const height = canvas.clientHeight || Math.max(420, containerWidth * 0.62);
+      const targetWidth = Math.round(containerWidth * ratio);
+      const targetHeight = Math.round(height * ratio);
+
+      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        lastCanvasWidth = containerWidth;
+        lastCanvasHeight = height;
+      }
+    }
+
+    function draw() {
+      const width = lastCanvasWidth;
+      const height = lastCanvasHeight;
+      if (width === 0 || height === 0) return;
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = 24;
+      const scaleX = (width - pad * 2) / 1000;
+      const scaleY = (height - pad * 2) / 1000;
+
+      const project = (p) => ({
+        x: pad + p.x * scaleX,
+        y: pad + p.y * scaleY,
+      });
+
+      if (bestTour.length === 0) return;
+
+      // Draw tour path.
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = "rgba(122, 224, 255, 0.9)";
+      ctx.beginPath();
+      const first = project(points[bestTour[0]]);
+      ctx.moveTo(first.x, first.y);
+      for (let i = 1; i < bestTour.length; i += 1) {
+        const pt = project(points[bestTour[i]]);
+        ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.lineTo(first.x, first.y);
+      ctx.stroke();
+
+      // Draw points.
+      for (let i = 0; i < bestTour.length; i += 1) {
+        const pt = project(points[bestTour[i]]);
+        const t = i / bestTour.length;
+        const color = `hsl(${160 + t * 80}, 70%, ${50 - t * 8}%)`;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Start marker.
+      ctx.fillStyle = "#ffda7b";
+      ctx.beginPath();
+      ctx.arc(first.x, first.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#0b1224";
+      ctx.font = "12px 'JetBrains Mono', 'Fira Code', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("0", first.x, first.y);
+    }
+
+    function tick() {
+      if (!running) return;
+      const steps = Math.max(1, readInt(stepInput, 3));
+      for (let i = 0; i < steps; i += 1) runGeneration();
+      updateStats();
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    function setRunning(value) {
+      running = value;
+      statusPill.textContent = value ? "Running" : "Paused";
+      statusPill.style.background = value ? "rgba(70, 194, 179, 0.14)" : "rgba(255, 255, 255, 0.06)";
+      statusPill.style.color = value ? "var(--accent)" : "var(--muted)";
+      startBtn.textContent = value ? "Pause" : "Start";
+      if (value) requestAnimationFrame(tick);
+    }
+
+    startBtn.addEventListener("click", () => setRunning(!running));
+
+    stepBtn.addEventListener("click", () => {
+      setRunning(false);
+      runGeneration();
+      updateStats();
+      draw();
+    });
+
+    stepBigBtn.addEventListener("click", () => {
+      setRunning(false);
+      for (let i = 0; i < 25; i += 1) runGeneration();
+      updateStats();
+      draw();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      setRunning(false);
+      initPopulation();
+      ensureCanvasSize();
+      draw();
+    });
+
+    crossInput.addEventListener("input", () => {
+      crossVal.textContent = Number(crossInput.value).toFixed(2);
+    });
+    mutInput.addEventListener("input", () => {
+      mutVal.textContent = Number(mutInput.value).toFixed(2);
+    });
+
+    window.addEventListener("resize", () => {
+      ensureCanvasSize();
+      draw();
+    });
+
+    initPopulation();
+    ensureCanvasSize();
+    draw();
+  </script>
+</body>
+</html>
